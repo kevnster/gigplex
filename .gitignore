@@ -1,0 +1,10 @@
+# Binaries
+gigplex
+*.exe
+
+# Go test output
+*.test
+*.out
+
+# OS
+.DS_Store
