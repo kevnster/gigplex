@@ -10,10 +10,10 @@ import (
 )
 
 type Backend struct {
-	mu       sync.Mutex
-	jobs     map[string]*gigplex.Job
-	queue    []string // ordered list of pending job IDs
-	workers  map[string]*gigplex.WorkerInfo
+	mu      sync.Mutex
+	jobs    map[string]*gigplex.Job
+	queue   []string // ordered list of pending job IDs
+	workers map[string]*gigplex.WorkerInfo
 }
 
 func New() *Backend {
@@ -124,4 +124,51 @@ func (b *Backend) Stats(_ context.Context) (gigplex.Stats, error) {
 		}
 	}
 	return stats, nil
+}
+
+func (b *Backend) RecentJobs(_ context.Context, limit int) ([]gigplex.Job, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	result := make([]gigplex.Job, 0, len(b.jobs))
+	for _, job := range b.jobs {
+		result = append(result, *job)
+	}
+
+	for i := 0; i < len(result)-1; i++ {
+		for j := i + 1; j < len(result); j++ {
+			if result[j].CreatedAt.After(result[i].CreatedAt) {
+				result[i], result[j] = result[j], result[i]
+			}
+		}
+	}
+
+	if len(result) > limit {
+		result = result[:limit]
+	}
+
+	return result, nil
+}
+
+func (b *Backend) KillWorker(_ context.Context, workerID string) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	delete(b.workers, workerID)
+	return nil
+}
+
+func (b *Backend) RetryFailed(_ context.Context) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for _, job := range b.jobs {
+		if job.Status == gigplex.StatusFailed {
+			job.Status = gigplex.StatusPending
+			job.Error = ""
+			b.queue = append(b.queue, job.ID)
+		}
+	}
+
+	return nil
 }

@@ -141,8 +141,18 @@ func renderJobLog(m Model) string {
 		return header + styleMuted.Render("  no jobs yet\n")
 	}
 
+	availableLines := m.height - 14
+	if availableLines < 1 {
+		availableLines = 1
+	}
+
+	jobs := m.recentJobs
+	if len(jobs) > availableLines {
+		jobs = jobs[:availableLines]
+	}
+
 	lines := []string{header}
-	for _, job := range m.recentJobs {
+	for _, job := range jobs {
 		lines = append(lines, renderJobLine(job))
 	}
 

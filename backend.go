@@ -15,6 +15,9 @@ type Backend interface {
 	Heartbeat(ctx context.Context, workerID string) error
 	Workers(ctx context.Context) ([]WorkerInfo, error)
 	Stats(ctx context.Context) (Stats, error)
+	RecentJobs(ctx context.Context, limit int) ([]Job, error)
+	KillWorker(ctx context.Context, workerID string) error
+	RetryFailed(ctx context.Context) error
 }
 
 type WorkerInfo struct {
