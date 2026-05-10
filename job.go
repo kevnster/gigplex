@@ -19,4 +19,5 @@ type Job struct {
 	Attempt   int
 	CreatedAt time.Time
 	Error     string
+	UpdatedAt time.Time
 }
